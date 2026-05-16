@@ -1,0 +1,10 @@
+# sensitive API credentials
+.env
+
+# call recordings
+recordings/
+
+# environment temporary files
+.direnv/
+dist/
+node_modules/
