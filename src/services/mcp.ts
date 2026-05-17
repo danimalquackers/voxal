@@ -78,5 +78,46 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
         }
     );
 
+    server.registerPrompt(
+        "agent_call",
+        {
+            title: "Agent Phone Call",
+            description: "Place a phone call and have an agent complete the provided objective",
+            argsSchema: z.object({
+                number: z.string().describe("The phone number to call (E.164 format, e.g., +1234567890)"),
+                objective: z.string().describe("The primary objective the voice agent should accomplish on the call"),
+                context: z.string().optional().describe("Optional context the agent might need to answer questions from the receiver."),
+            }),
+        },
+        ({ number, objective, context }) => {
+            let prompt = `
+                Call ${number} and complete the following objective:
+                ${objective}
+            `;
+
+            if (context)
+                prompt += `
+                    In case you need it, here is some additional information
+                    about the user: ${context}
+                `;
+
+            return {
+                messages: [
+                    {
+                        role: "user" as const,
+                        content: {
+                            type: "text" as const,
+                            text: `
+                                Call ${number} and complete the following objective: ${objective}
+
+                                ${context ? `In case you need it, here is some additional information about the user: ${context}` : ""}
+                            `
+                        }
+                    }
+                ]
+            };
+        }
+    )
+
     return server;
 }
