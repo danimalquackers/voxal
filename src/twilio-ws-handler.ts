@@ -16,6 +16,8 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     let callSid: string | null = null;
     let streamSid: string | null = null;
     let bridge: GeminiBridge | null = null;
+    let isMuted = false;
+    let expectedPlaybackFinishedTime = 0;
 
     ws.on('message', async (message: string) => {
         const msg = JSON.parse(message);
@@ -57,6 +59,19 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     callContext.outRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_sent.raw`));
 
                     bridge.on('audio', (pcm16Buffer: Buffer) => {
+                        if (isMuted) return;
+
+                        // Calculate exact duration of this PCM16 chunk in milliseconds
+                        const chunkDurationMs = pcm16Buffer.length / 32;
+
+                        // Keep track of the expected playback duration
+                        const now = Date.now();
+                        if (now > expectedPlaybackFinishedTime) {
+                            expectedPlaybackFinishedTime = now + chunkDurationMs;
+                        } else {
+                            expectedPlaybackFinishedTime += chunkDurationMs;
+                        }
+
                         // Record outgoing Gemini audio
                         if (callContext.outRecording)
                             callContext.outRecording.write(pcm16Buffer);
@@ -98,12 +113,36 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     bridge.on('task_completed', (summary: string) => {
                         console.log(`[Twilio WS] Task completed. Summary: ${summary}`);
 
-                        // Clean up all resources and return a call result
-                        if (callSid) {
-                            callContext.resolve(summary);
+                        // Buffer time in ms for any final Gemini audio to stream
+                        const PLAYBACK_GRACE_PERIOD = 500;
 
-                            cleanupCall(callSid);
-                        }
+                        // Grace period to allow goodbye to finish streaming from Gemini
+                        setTimeout(() => {
+                            isMuted = true;
+                            checkAndHangup();
+
+                            console.log(`[Twilio WS] Goodbye grace period ended, muting Gemini`);
+                        }, PLAYBACK_GRACE_PERIOD);
+
+                        // Complete call hangup after the receiver has heard the full goodbye
+                        const checkAndHangup = () => {
+                            const now = Date.now();
+                            const remainingMs = expectedPlaybackFinishedTime - now;
+
+                            if (remainingMs > 0) {
+                                const waitTime = remainingMs + PLAYBACK_GRACE_PERIOD;
+
+                                console.log(`[Twilio WS] Playback queue not empty. Waiting ${waitTime}ms for audio to complete...`);
+                                setTimeout(checkAndHangup, waitTime);
+                            } else {
+                                if (callSid) {
+                                    console.log(`[Twilio WS] Goodbye complete. Hanging up call ${callSid}`);
+
+                                    callContext.resolve(summary);
+                                    cleanupCall(callSid);
+                                }
+                            }
+                        };
                     });
 
                     bridge.on('close', () => {
@@ -128,7 +167,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                 }
                 break;
             case 'media':
-                if (bridge && callSid) {
+                if (bridge && callSid && !isMuted) {
                     const callContext = activeCalls.get(callSid);
 
                     // Decode incoming audio
