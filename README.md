@@ -164,6 +164,7 @@ Since the files are headerless `.raw` PCM streams, media players won't be able t
 
 * Twilio (human) recordings: `ffplay -f s16le -ac 1 -ar 16000 -i recordings/call_<SID>_received.raw`
 * Gemini recordings: `ffplay -f s16le -ac 1 -ar 24000 -i recordings/call_<SID>_sent.raw`
+* Combined: Use the helper script in this repository - `./play.sh <SID>`
 
 A future version may improve this process by re-encoding the audio.
 
