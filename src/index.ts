@@ -4,9 +4,9 @@ import expressWs from 'express-ws';
 import ngrok from '@ngrok/ngrok';
 import { hostHeaderValidation } from "@modelcontextprotocol/express"
 import { config } from './config.js';
-import { serverState } from './services.js';
-import { handleTwilioWebSocket } from './twilio-ws-handler.js';
-import { handleMcpRequest, initStdioMcp } from './mcp-handler.js';
+import { serverState } from './services/shared.js';
+import { handleTwilioWebSocket } from './routes/media.js';
+import { handleMcpRequest, initStdioMcp } from './routes/mcp.js';
 
 async function startServer() {
     console.log(`[Ngrok] Initializing tunnel...`);

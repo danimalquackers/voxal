@@ -1,6 +1,6 @@
-import { createMcpServer } from './mcp-server.js';
-import { executeCall } from './call-handler.js';
-import { getCalls } from './call-registry.js';
+import { createMcpServer } from '../services/mcp.js';
+import { executeCall } from '../calls/handler.js';
+import { getCalls } from '../calls/registry.js';
 import { McpServer, StdioServerTransport } from '@modelcontextprotocol/server';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { randomUUID } from 'crypto';

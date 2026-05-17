@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { config } from './config.js';
-import { GeminiBridge } from './gemini-bridge.js';
-import { decodeMulawToPcm16, encodePcm16ToMulaw, generateDtmfPcm16 } from './audio-utils.js';
-import { activeCalls, cleanupCall } from './call-registry.js';
+import { config } from '../config.js';
+import { GeminiBridge } from '../services/gemini.js';
+import { decodeMulawToPcm16, encodePcm16ToMulaw, generateDtmfPcm16 } from '../utils/audio.js';
+import { activeCalls, cleanupCall } from '../calls/registry.js';
 
 const recordingsDir = config.recordingsDir;
 if (!fs.existsSync(recordingsDir)) {
@@ -52,7 +52,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                         console.log(`[Twilio WS] Gemini is ready for call ${callSid}`);
                     } catch (err) {
                         console.error(`[Twilio WS] Gemini failed to initialize for call ${callSid}:`, err);
-                    };
+                    }
 
                     // Start recordings
                     callContext.inRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_received.raw`));

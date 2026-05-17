@@ -1,9 +1,6 @@
 import pkg from 'wavefile';
 const { WaveFile } = pkg;
 
-// TODO Enable call transcripts (return after call completion as a resource link)
-// TODO Provide an MCP prompt resource
-
 /**
  * Decodes 8kHz µ-law audio to 16kHz PCM16 format required by Gemini.
  * Utilizes the wavefile package for clean conversion and resampling.

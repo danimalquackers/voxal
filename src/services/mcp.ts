@@ -7,7 +7,7 @@ export interface CallRequest {
     objective: string;
     context?: string;
     recordCall?: boolean;
-};
+}
 
 // Tool definitions
 export type ExecuteCallFn = (request: CallRequest) => Promise<string>;

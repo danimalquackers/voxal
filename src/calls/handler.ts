@@ -1,8 +1,8 @@
 import fs from 'fs';
-import { config } from './config.js';
-import { twilioClient, serverState } from './services.js';
-import { activeCalls, cleanupCall } from './call-registry.js';
-import { CallRequest } from './mcp-server.js';
+import { config } from '../config.js';
+import { twilioClient, serverState } from '../services/shared.js';
+import { activeCalls, cleanupCall } from './registry.js';
+import { CallRequest } from '../services/mcp.js';
 
 export async function executeCall(request: CallRequest): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {

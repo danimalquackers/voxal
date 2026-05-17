@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { GeminiBridge } from './gemini-bridge.js';
-import { twilioClient } from './services.js';
+import { GeminiBridge } from '../services/gemini.js';
+import { twilioClient } from '../services/shared.js';
 
 export interface CallContext {
     resolve: (summary: string) => void;

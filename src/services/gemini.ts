@@ -32,6 +32,7 @@ export class GeminiBridge extends EventEmitter {
 
     constructor(options: GeminiBridgeOptions) {
         super();
+
         this.options = options;
 
         // Connect to Gemini API
@@ -77,7 +78,7 @@ export class GeminiBridge extends EventEmitter {
                 
                 Your objective is: ${this.options.objective}
                 Additional context from the user: ${this.options.context || 'None'}
-            `
+            `;
 
             // Establish and configure the Live session
             this.session = await this.ai.live.connect({
