@@ -21,7 +21,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     let totalBytesReceived = 0;
     let totalBytesSent = 0;
     let callStartTime = 0;
-    let lastTranscriptSpeaker: 'user' | 'model' | null = null;
+    let lastTranscriptSpeaker: 'user' | 'agent' | null = null;
     let awaitingSummary = false;
 
     const recordOutgoingAudio = (pcm16Buffer: Buffer, outRecording?: WriteStream) => {

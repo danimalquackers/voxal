@@ -12,7 +12,7 @@ export interface GeminiBridgeOptions {
 }
 
 export interface TranscriptEntry {
-    speaker: 'user' | 'model';
+    speaker: 'user' | 'agent';
     text: string;
 }
 
@@ -219,12 +219,18 @@ export class GeminiBridge extends EventEmitter {
 
                 // Emit transcription events (user speech-to-text)
                 if (content.inputTranscription?.text) {
-                    this.emit('transcript', { speaker: 'user', text: content.inputTranscription.text } as TranscriptEntry);
+                    const text = content.inputTranscription.text;
+
+                    console.error(`[Transcript] User: ${text}`);
+                    this.emit('transcript', { speaker: 'user', text } as TranscriptEntry);
                 }
 
                 // Emit transcription events (model speech-to-text)
                 if (content.outputTranscription?.text) {
-                    this.emit('transcript', { speaker: 'model', text: content.outputTranscription.text } as TranscriptEntry);
+                    const text = content.outputTranscription.text;
+
+                    console.error(`[Transcript] Agent: ${text}`);
+                    this.emit('transcript', { speaker: 'agent', text } as TranscriptEntry);
                 }
                 
                 // No-op warning for interruptions
