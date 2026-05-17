@@ -22,6 +22,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     let totalBytesSent = 0;
     let callStartTime = 0;
     let lastTranscriptSpeaker: 'user' | 'model' | null = null;
+    let awaitingSummary = false;
 
     const recordOutgoingAudio = (pcm16Buffer: Buffer, outRecording?: WriteStream) => {
         if (outRecording) {
@@ -212,8 +213,8 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     bridge.on('close', () => {
                         console.log(`[Gemini] Connection closed for call ${callSid}`);
 
-                        // Handle unexpected disconnects
-                        if (callSid)
+                        // Only treat as error if we weren't awaiting a summary
+                        if (callSid && !awaitingSummary)
                             cleanupCall(callSid, new Error("Gemini connection closed."));
                     });
 
@@ -251,13 +252,27 @@ export function handleTwilioWebSocket(ws: any, req: any) {
             case 'stop':
                 console.log(`[Twilio] Stream stopped for call ${callSid}`);
 
-                // Clean up resources
-                cleanupCall(callSid, new Error("Call ended by user or Twilio."));
+                // Mute the audio stream, no more audio can be sent
+                isMuted = true;
+
+                if (bridge && callSid && activeCalls.has(callSid)) {
+                    // Ask Gemini to summarize and call task_completed
+                    awaitingSummary = true;
+                    bridge.notifyDisconnect();
+                } else {
+                    cleanupCall(callSid, new Error("Call ended by user or Twilio."));
+                }
                 break;
         }
     });
 
     ws.on('close', () => {
+        // If we're waiting for Gemini's summary, don't clean up yet
+        if (awaitingSummary) {
+            console.log('[Express] WebSocket closed, awaiting Gemini summary...');
+            return;
+        }
+
         console.log('[Express] WebSocket closed unexpectedly.');
 
         // Handle unexpected disconnects

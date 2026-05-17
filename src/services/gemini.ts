@@ -172,6 +172,32 @@ export class GeminiBridge extends EventEmitter {
         });
     }
 
+    /**
+     * Notifies Gemini that the other party has disconnected,
+     * instructing it to immediately call task_completed with a summary.
+     */
+    public notifyDisconnect() {
+        if (!this.session) return;
+
+        console.log('[Gemini] Notifying disconnect, requesting summary...');
+
+        this.session.sendClientContent({
+            turns: [{
+                role: 'user',
+                parts: [{
+                    text: `
+                        The other party has disconnected from the call.
+                        Do not generate any more audio. Process all of
+                        the remaining user input and call 'task_completed'
+                        immediately with a summary of what was
+                        accomplished during this call.
+                    `
+                }]
+            }],
+            turnComplete: true
+        });
+    }
+
     private handleMessage(message: any) {
         try {
             // Handle setup response
