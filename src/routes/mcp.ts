@@ -37,14 +37,14 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
 
     try {
         if (!session) {
-            console.log(`[MCP] Establishing new session`);
+            console.log(`[MCP] Establishing new session...`);
 
             // Generate a new session bound to a UUID
             const transport = new NodeStreamableHTTPServerTransport({ 
                 sessionIdGenerator: () => randomUUID() 
             });
             
-            // Create a fresh MCP server instance for this session
+            // Create a new MCP server instance for this session
             const sessionServer = createMcpServer(executeCall, getCalls);
             await sessionServer.connect(transport);
             
@@ -65,7 +65,7 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
                     activeSessions.delete(id);
                 };
                 
-                console.log(`[MCP] Session established and mapped: ${id}`);
+                console.log(`[MCP] Session established: ${id}`);
             }
         } else {
             session.lastSeen = Date.now();
@@ -74,7 +74,7 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
             await session.transport.handleRequest(req, res, req.body);
         }
     } catch (err) {
-        console.error(`[MCP] Error handling request:`, err);
+        console.error(`[MCP] Request error:`, err);
         if (!res.headersSent) {
             res.status(500).send("Internal Server Error");
         }
@@ -83,7 +83,7 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
 
 export async function initStdioMcp() {
     if (process.env.ENABLE_STDIO === 'true') {
-        console.log(`[MCP] Starting stdio transport`);
+        console.log(`[MCP] Starting stdio transport...`);
         
         // No mapping needed for stdio
         const stdioTransport = new StdioServerTransport();

@@ -43,16 +43,16 @@ export class GeminiBridge extends EventEmitter {
         
         this.readyPromise = new Promise((resolve, reject) => {
             this.resolveReady = () => {
-                console.log('[Gemini] Bridge ready (resolveReady called)');
+                console.log('[Gemini] Session initialized');
                 resolve();
             };
             this.rejectReady = (err) => {
-                console.log(`[Gemini] Bridge failed (rejectReady called): ${err.message}`);
+                console.error(`[Gemini] Initialization failed: ${err.message}`);
                 reject(err);
             };
         });
 
-        console.log(`[Gemini] Connecting to model ${model}`);
+        console.log(`[Gemini] Connecting to ${model}...`);
         this.connect(model);
     }
 
@@ -132,7 +132,7 @@ export class GeminiBridge extends EventEmitter {
                 },
                 callbacks: {
                     onopen: () => {
-                        console.log('[Gemini] WebSocket connection opened');
+                        console.log('[Gemini] Connection established');
                     },
                     onmessage: this.handleMessage.bind(this),
                     onerror: this.handleError.bind(this),
@@ -164,7 +164,7 @@ export class GeminiBridge extends EventEmitter {
         try {
             // Handle setup response
             if (message.setupComplete) {
-                console.log('[Gemini] Setup complete. AI is ready to listen.');
+                console.log('[Gemini] Setup complete');
                 
                 // Propagate the connection success
                 this.isReady = true;
@@ -179,7 +179,7 @@ export class GeminiBridge extends EventEmitter {
                 
                 // No-op warning for interruptions
                 if (content.interrupted) {
-                    console.log('[Gemini] Model interrupted.');
+                    console.log('[Gemini] Model interrupted');
                     this.emit('interrupted');
                 }
                 
@@ -214,16 +214,16 @@ export class GeminiBridge extends EventEmitter {
             } else if (message.sessionResumptionUpdate) {
                 // No-op, session resumption is not needed
             } else {
-                console.log('[Gemini] Received other message:', JSON.stringify(message).substring(0, 500));
+                console.log('[Gemini] Other message received:', JSON.stringify(message).substring(0, 100));
             }
         } catch (error) {
-            console.error('[Gemini] Error handling message:', error);
+            console.error('[Gemini] Message parsing error:', error);
         }
     }
 
     private handleFunctionCall(functionCall: any) {
         const { name, args, id } = functionCall;
-        console.log(`[Gemini] Function call received: ${name}`, args);
+        console.log(`[Gemini] Tool call: ${name}`, args);
         
         if (name === 'task_completed') {
             // Propagate call completion

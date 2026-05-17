@@ -41,7 +41,7 @@ async function startServer() {
 
     // Log connection endpoints
     if (publicUrl) {
-        console.error(`[Twilio] Twilio Media Stream URL: ${publicUrl}/media-stream`);
+        console.log(`[Twilio] Media Stream URL: ${publicUrl}/media-stream`);
         console.log(`[MCP] StreamableHTTP URL: ${publicUrl}/mcp`);
     }
     
@@ -63,4 +63,8 @@ async function startServer() {
     });
 }
 
-startServer().catch(console.error);
+try {
+    startServer();
+} catch (err) {
+    console.error('[Express] Server startup failed:', err);
+}

@@ -8,7 +8,7 @@ export async function executeCall(request: CallRequest): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
         try {
             console.log(`[MCP] Executing call to ${request.targetPhoneNumber}`);
-            
+
             // WSS url based on public URL
             const publicUrl = serverState.publicUrl;
             const wssEndpoint = publicUrl.replace('https://', 'wss://').replace('http://', 'ws://');
@@ -45,8 +45,14 @@ export async function executeCall(request: CallRequest): Promise<string> {
             // Timeout to prevent dangling calls (10 mins)
             setTimeout(() => {
                 if (activeCalls.has(callSid)) {
-                    console.log(`[Timeout] Call ${callSid} timed out.`);
-                    twilioClient.endCall(callSid).catch(console.error);
+                    console.log(`[Twilio] Call ${callSid} timed out.`);
+
+                    // Try to end the call
+                    try {
+                        twilioClient.endCall(callSid);
+                    } catch (err) {
+                        console.error(`[Twilio] Failed to end call ${callSid} on timeout:`, err);
+                    }
 
                     // Propagate the timeout error
                     cleanupCall(callSid, new Error("Call timed out after 10 minutes."));
