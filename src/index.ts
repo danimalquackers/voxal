@@ -9,7 +9,7 @@ import { handleTwilioWebSocket } from './routes/media.js';
 import { handleMcpRequest, initStdioMcp } from './routes/mcp.js';
 
 async function startServer() {
-    console.log(`[Ngrok] Initializing tunnel...`);
+    console.error(`[Ngrok] Initializing tunnel...`);
     
     const port = config.port;
 
@@ -26,7 +26,7 @@ async function startServer() {
         publicUrl = listener.url() || publicUrl;
         serverState.publicUrl = publicUrl;
 
-        console.log(`[Ngrok] Tunnel established at: ${publicUrl}`);
+        console.error(`[Ngrok] Tunnel established at: ${publicUrl}`);
     } catch (err) {
         console.error('[Ngrok] Failed to establish tunnel:', err);
     }
@@ -41,8 +41,8 @@ async function startServer() {
 
     // Log connection endpoints
     if (publicUrl) {
-        console.log(`[Twilio] Media Stream URL: ${publicUrl}/media-stream`);
-        console.log(`[MCP] StreamableHTTP URL: ${publicUrl}/mcp`);
+        console.error(`[Twilio] Media Stream URL: ${publicUrl}/media-stream`);
+        console.error(`[MCP] StreamableHTTP URL: ${publicUrl}/mcp`);
     }
     
     // WebSocket endpoint for Twilio Media Stream
@@ -59,7 +59,7 @@ async function startServer() {
     await initStdioMcp();
 
     app.listen(config.port, config.host, () => {
-        console.log(`[Express] Server listening on ${config.host}:${config.port}`);
+        console.error(`[Express] Server listening on ${config.host}:${config.port}`);
     });
 }
 

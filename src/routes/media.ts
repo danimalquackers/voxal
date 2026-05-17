@@ -11,7 +11,7 @@ if (!fs.existsSync(recordingsDir)) {
 }
 
 export function handleTwilioWebSocket(ws: any, req: any) {
-    console.log('[Express] WebSocket connection opened.');
+    console.error('[Express] WebSocket connection opened.');
 
     let callSid: string | null = null;
     let streamSid: string | null = null;
@@ -54,12 +54,12 @@ export function handleTwilioWebSocket(ws: any, req: any) {
 
         switch (msg.event) {
             case 'connected':
-                console.log(`[Twilio] Media Stream connected.`);
+                console.error(`[Twilio] Media Stream connected.`);
                 break;
             case 'start':
                 streamSid = msg.start.streamSid;
                 callSid = msg.start.callSid;
-                console.log(`[Twilio] Stream started for call ${callSid}`);
+                console.error(`[Twilio] Stream started for call ${callSid}`);
                 
                 const callContext = activeCalls.get(callSid!);
                 if (callContext) {
@@ -80,7 +80,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     try {
                         await bridge.readyPromise;
 
-                        console.log(`[Gemini] Ready for call ${callSid}`);
+                        console.error(`[Gemini] Ready for call ${callSid}`);
                     } catch (err) {
                         console.error(`[Gemini] Failed to initialize for call ${callSid}:`, err);
                     }
@@ -127,7 +127,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     });
 
                     bridge.on('press_dtmf', (key: string) => {
-                        console.log(`[Gemini] Requested DTMF: ${key}`);
+                        console.error(`[Gemini] Requested DTMF: ${key}`);
                         
                         // Generate and encode DTMF for Twilio
                         const dtmfPcm16 = generateDtmfPcm16(key, 250); 
@@ -163,7 +163,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     });
 
                     bridge.on('interrupted', () => {
-                        console.log(`[Gemini] Interrupted, clearing playback buffer`);
+                        console.error(`[Gemini] Interrupted, clearing playback buffer`);
 
                         // Clear any buffered Gemini audio
                         ws.send(JSON.stringify({
@@ -173,7 +173,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     });
 
                     bridge.on('task_completed', (summary: string) => {
-                        console.log(`[Gemini] Task completed. Summary: ${summary}`);
+                        console.error(`[Gemini] Task completed. Summary: ${summary}`);
 
                         // Buffer time in ms for any final Gemini audio to stream
                         const PLAYBACK_GRACE_PERIOD = 500;
@@ -183,7 +183,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                             isMuted = true;
                             checkAndHangup();
 
-                            console.log(`[Gemini] Goodbye grace period ended, muting stream`);
+                            console.error(`[Gemini] Goodbye grace period ended, muting stream`);
                         }, PLAYBACK_GRACE_PERIOD);
 
                         // Complete call hangup after the receiver has heard the full goodbye
@@ -194,11 +194,11 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                             if (remainingMs > 0) {
                                 const waitTime = remainingMs + PLAYBACK_GRACE_PERIOD;
 
-                                console.log(`[Twilio] Playback queue not empty, waiting ${waitTime}ms for playback to complete...`);
+                                console.error(`[Twilio] Playback queue not empty, waiting ${waitTime}ms for playback to complete...`);
                                 setTimeout(checkAndHangup, waitTime);
                             } else {
                                 if (callSid) {
-                                    console.log(`[Twilio] Call complete. Hanging up ${callSid}`);
+                                    console.error(`[Twilio] Call complete. Hanging up ${callSid}`);
 
                                     // Cache the summary in the call context
                                     callContext.summary = summary;
@@ -211,7 +211,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     });
 
                     bridge.on('close', () => {
-                        console.log(`[Gemini] Connection closed for call ${callSid}`);
+                        console.error(`[Gemini] Connection closed for call ${callSid}`);
 
                         // Only treat as error if we weren't awaiting a summary
                         if (callSid && !awaitingSummary)
@@ -250,7 +250,7 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                 }
                 break;
             case 'stop':
-                console.log(`[Twilio] Stream stopped for call ${callSid}`);
+                console.error(`[Twilio] Stream stopped for call ${callSid}`);
 
                 // Mute the audio stream, no more audio can be sent
                 isMuted = true;
@@ -269,11 +269,11 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     ws.on('close', () => {
         // If we're waiting for Gemini's summary, don't clean up yet
         if (awaitingSummary) {
-            console.log('[Express] WebSocket closed, awaiting Gemini summary...');
+            console.error('[Express] WebSocket closed, awaiting Gemini summary...');
             return;
         }
 
-        console.log('[Express] WebSocket closed unexpectedly.');
+        console.error('[Express] WebSocket closed unexpectedly.');
 
         // Handle unexpected disconnects
         cleanupCall(callSid, new Error("WebSocket closed."));

@@ -15,7 +15,7 @@ setInterval(() => {
     const now = Date.now();
     for (const [id, session] of activeSessions.entries()) {
         if (now - session.lastSeen > CLEANUP_INTERVAL_MS) {
-            console.log(`[MCP] Cleaning up stale session: ${id}`);
+            console.error(`[MCP] Cleaning up stale session: ${id}`);
 
             // Ignore errors, forcefully remove the session
             session.transport.close().catch(() => {});
@@ -37,7 +37,7 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
 
     try {
         if (!session) {
-            console.log(`[MCP] Establishing new session...`);
+            console.error(`[MCP] Establishing new session...`);
 
             // Generate a new session bound to a UUID
             const transport = new NodeStreamableHTTPServerTransport({ 
@@ -61,11 +61,11 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
                 });
                 
                 transport.onclose = () => {
-                    console.log(`[MCP] Session closed: ${id}`);
+                    console.error(`[MCP] Session closed: ${id}`);
                     activeSessions.delete(id);
                 };
                 
-                console.log(`[MCP] Session established: ${id}`);
+                console.error(`[MCP] Session established: ${id}`);
             }
         } else {
             session.lastSeen = Date.now();
@@ -83,7 +83,7 @@ export async function handleMcpRequest(req: express.Request, res: express.Respon
 
 export async function initStdioMcp() {
     if (process.env.ENABLE_STDIO === 'true') {
-        console.log(`[MCP] Starting stdio transport...`);
+        console.error(`[MCP] Starting stdio transport...`);
         
         // No mapping needed for stdio
         const stdioTransport = new StdioServerTransport();

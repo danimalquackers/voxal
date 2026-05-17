@@ -28,7 +28,7 @@ export class TwilioClient {
      * Initiates an outbound call using Twilio, connecting it immediately to a Media Stream.
      */
     public async makeCall(to: string, wssUrl: string): Promise<string> {
-        console.log(`[Twilio] Starting call to ${to}`);
+        console.error(`[Twilio] Starting call to ${to}`);
         
         // Use inline TwiML to start the stream immediately
         const twiml = `
@@ -46,7 +46,7 @@ export class TwilioClient {
             from: this.fromNumber
         });
 
-        console.log(`[Twilio] Call started: ${call.sid}`);
+        console.error(`[Twilio] Call started: ${call.sid}`);
         return call.sid;
     }
 
@@ -57,7 +57,7 @@ export class TwilioClient {
         try {
             await this.client.calls(callSid).update({ status: 'completed' });
 
-            console.log(`[Twilio] Call ended: ${callSid}`);
+            console.error(`[Twilio] Call ended: ${callSid}`);
         } catch (error) {
             console.error(`[Twilio] Failed to end call ${callSid}:`, error);
         }
@@ -68,7 +68,7 @@ export class TwilioClient {
      */
     public async getCalls(limit: number = 20) {
         try {
-            console.log('[Twilio] Fetching call history...');
+            console.error('[Twilio] Fetching call history...');
 
             const calls = await this.client.calls.list({ limit });
             return calls.map(c => ({

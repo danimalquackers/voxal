@@ -35,7 +35,7 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
             })
         },
         async (args: any) => {
-            console.log(`[MCP] Tool invoked: execute_phone_call to ${args.target_phone_number} (Record: ${args.record_call})`);
+            console.error(`[MCP] Tool invoked: execute_phone_call to ${args.target_phone_number} (Record: ${args.record_call})`);
             try {
                 // Place the call and wait for it to complete
                 const sid = await executeCall({
@@ -85,7 +85,7 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
             })
         },
         async (args: any) => {
-            console.log(`[MCP] Tool invoked: get_call_history (Limit: ${args.limit})`);
+            console.error(`[MCP] Tool invoked: get_call_history (Limit: ${args.limit})`);
             try {
                 const history = await getCallHistory(args.limit);
                 return {
@@ -129,7 +129,7 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
             mimeType: "text/plain",
         },
         async (uri, { sid }) => {
-            console.log(`[MCP] Retrieving transcript for call ${sid}`);
+            console.error(`[MCP] Retrieving transcript for call ${sid}`);
             try {
                 // Try to read the transcript file if it exists
                 const transcriptFile = `${config.recordingsDir}/call_${sid}_transcript.txt`;

@@ -49,7 +49,7 @@ export class GeminiBridge extends EventEmitter {
             this.rejectReady = reject;
         });
 
-        console.log(`[Gemini] Connecting to ${this.options.model}...`);
+        console.error(`[Gemini] Connecting to ${this.options.model}...`);
         this.connect();
     }
 
@@ -144,7 +144,7 @@ export class GeminiBridge extends EventEmitter {
                 config: liveConfig,
                 callbacks: {
                     onopen: () => {
-                        console.log('[Gemini] Connection established');
+                        console.error('[Gemini] Connection established');
                     },
                     onmessage: this.handleMessage.bind(this),
                     onerror: this.handleError.bind(this),
@@ -179,7 +179,7 @@ export class GeminiBridge extends EventEmitter {
     public notifyDisconnect() {
         if (!this.session) return;
 
-        console.log('[Gemini] Notifying disconnect, requesting summary...');
+        console.error('[Gemini] Notifying disconnect, requesting summary...');
 
         this.session.sendClientContent({
             turns: [{
@@ -202,7 +202,7 @@ export class GeminiBridge extends EventEmitter {
         try {
             // Handle setup response
             if (message.setupComplete) {
-                console.log('[Gemini] Session started');
+                console.error('[Gemini] Session started');
                 
                 // Propagate the connection success
                 this.isReady = true;
@@ -227,7 +227,7 @@ export class GeminiBridge extends EventEmitter {
                 
                 // No-op warning for interruptions
                 if (content.interrupted) {
-                    console.log('[Gemini] Model interrupted');
+                    console.error('[Gemini] Model interrupted');
                     this.emit('interrupted');
                 }
                 
@@ -262,7 +262,7 @@ export class GeminiBridge extends EventEmitter {
             } else if (message.sessionResumptionUpdate) {
                 // No-op, session resumption is not needed
             } else {
-                console.log('[Gemini] Other message received:', JSON.stringify(message).substring(0, 100));
+                console.error('[Gemini] Other message received:', JSON.stringify(message).substring(0, 100));
             }
         } catch (error) {
             console.error('[Gemini] Message parsing error:', error);
@@ -271,7 +271,7 @@ export class GeminiBridge extends EventEmitter {
 
     private handleFunctionCall(functionCall: any) {
         const { name, args, id } = functionCall;
-        console.log(`[Gemini] Tool call: ${name}`, args);
+        console.error(`[Gemini] Tool call: ${name}`, args);
         
         // Propagate tool calls
         if (name === 'task_completed') {
@@ -298,7 +298,7 @@ export class GeminiBridge extends EventEmitter {
     }
 
     private handleClose(event: any) {
-        console.log(`[Gemini] Session ended.`);
+        console.error(`[Gemini] Session ended.`);
         this.emit('close');
 
         if (!this.isReady)

@@ -7,7 +7,7 @@ import { CallRequest } from '../services/mcp.js';
 export async function executeCall(request: CallRequest): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
         try {
-            console.log(`[MCP] Executing call to ${request.targetPhoneNumber}`);
+            console.error(`[MCP] Executing call to ${request.targetPhoneNumber}`);
 
             // WSS url based on public URL
             const publicUrl = serverState.publicUrl;
@@ -45,7 +45,7 @@ export async function executeCall(request: CallRequest): Promise<string> {
             // Timeout to prevent dangling calls (10 mins)
             setTimeout(() => {
                 if (activeCalls.has(callSid)) {
-                    console.log(`[Twilio] Call ${callSid} timed out.`);
+                    console.error(`[Twilio] Call ${callSid} timed out.`);
 
                     // Try to end the call
                     try {

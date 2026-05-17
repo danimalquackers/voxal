@@ -25,7 +25,7 @@ export async function cleanupCall(sid: string | null, error?: Error) {
     if (sid && activeCalls.has(sid)) {
         const callContext = activeCalls.get(sid);
         if (callContext) {
-            console.log(`[Twilio] Cleaning up call ${sid}${error ? ` (${error.message})` : ''}`);
+            console.error(`[Twilio] Cleaning up call ${sid}${error ? ` (${error.message})` : ''}`);
 
             // End the Twilio call explicitly if not already ended
             await twilioClient.endCall(sid).catch(() => { });
