@@ -1,6 +1,10 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { config as dotenvConfig } from "dotenv";
 import path from "path";
+
+// Load .env options
+dotenvConfig();
 
 // Parse arguments with yargs
 const argv = yargs(hideBin(process.argv))
@@ -123,13 +127,3 @@ export const config = {
     // Gemini API Key
     apiKey: argv["gemini-api-key"],
 };
-
-console.log("[Config] Active configuration:", {
-    model: config.model,
-    contextFile: config.contextFile,
-    recordingsDir: config.recordingsDir,
-    port: config.port,
-    host: config.host,
-    ngrokDomain: config.ngrok.domain || "ephemeral",
-    twilioNumber: config.twilio.phoneNumber
-});
