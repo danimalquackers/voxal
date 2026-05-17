@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs, { WriteStream } from 'fs';
 import path from 'path';
 import { config } from '../config.js';
 import { GeminiBridge } from '../services/gemini.js';
@@ -18,6 +18,33 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     let bridge: GeminiBridge | null = null;
     let isMuted = false;
     let expectedPlaybackFinishedTime = 0;
+    let totalBytesReceived = 0;
+    let totalBytesSent = 0;
+
+    const recordOutgoingAudio = (pcm16Buffer: Buffer, outRecording?: WriteStream) => {
+        if (outRecording) {
+            // Create gaps between Gemini audio chunks
+            const gapBytes = totalBytesReceived - totalBytesSent;
+            if (gapBytes > 0) {
+                outRecording.write(Buffer.alloc(gapBytes));
+                totalBytesSent += gapBytes;
+            }
+
+            outRecording.write(pcm16Buffer);
+            totalBytesSent += pcm16Buffer.length;
+        }
+    };
+
+    const sendOutgoingAudio = (pcm16Buffer: Buffer) => {
+        // Re-encode PCM16 to send over media stream
+        const mulawBuffer = encodePcm16ToMulaw(pcm16Buffer);
+
+        ws.send(JSON.stringify({
+            event: 'media',
+            streamSid: streamSid,
+            media: { payload: mulawBuffer.toString('base64') }
+        }));
+    };
 
     ws.on('message', async (message: string) => {
         const msg = JSON.parse(message);
@@ -72,17 +99,11 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                             expectedPlaybackFinishedTime += chunkDurationMs;
                         }
 
-                        // Record outgoing Gemini audio
-                        if (callContext.outRecording)
-                            callContext.outRecording.write(pcm16Buffer);
+                        // Record outgoing Gemini audio with gaps
+                        recordOutgoingAudio(pcm16Buffer, callContext.outRecording);
 
                         // Re-encode Gemini audio for media stream
-                        const mulawBuffer = encodePcm16ToMulaw(pcm16Buffer);
-                        ws.send(JSON.stringify({
-                            event: 'media',
-                            streamSid: streamSid,
-                            media: { payload: mulawBuffer.toString('base64') }
-                        }));
+                        sendOutgoingAudio(pcm16Buffer);
                     });
 
                     bridge.on('press_dtmf', (key: string) => {
@@ -90,14 +111,12 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                         
                         // Generate and encode DTMF for Twilio
                         const dtmfPcm16 = generateDtmfPcm16(key, 250); 
-                        const dtmfMulaw = encodePcm16ToMulaw(dtmfPcm16);
+
+                        // Record DTMF audio with silence alignment
+                        recordOutgoingAudio(dtmfPcm16, callContext.outRecording);
 
                         // Send DTMF tone over media stream
-                        ws.send(JSON.stringify({
-                            event: 'media',
-                            streamSid: streamSid,
-                            media: { payload: dtmfMulaw.toString('base64') }
-                        }));
+                        sendOutgoingAudio(dtmfPcm16);
                     });
 
                     bridge.on('interrupted', () => {
@@ -175,8 +194,10 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     const pcm16Buffer = decodeMulawToPcm16(mulawBuffer);
                     
                     // Record incoming audio
-                    if (callContext?.inRecording)
+                    if (callContext?.inRecording) {
                         callContext.inRecording.write(pcm16Buffer);
+                        totalBytesReceived += pcm16Buffer.length;
+                    }
 
                     // Forward audio to Gemini
                     bridge.sendAudio(pcm16Buffer);

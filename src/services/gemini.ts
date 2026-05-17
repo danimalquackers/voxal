@@ -38,30 +38,27 @@ export class GeminiBridge extends EventEmitter {
         // Connect to Gemini API
         this.ai = new GoogleGenAI({ apiKey: this.options.apiKey });
         
-        // Configure the model settings
-        const model = this.options.model;
-        
         this.readyPromise = new Promise((resolve, reject) => {
-            this.resolveReady = () => {
-                console.log('[Gemini] Session initialized');
-                resolve();
-            };
-            this.rejectReady = (err) => {
-                console.error(`[Gemini] Initialization failed: ${err.message}`);
-                reject(err);
-            };
+            this.resolveReady = resolve;
+            this.rejectReady = reject;
         });
 
-        console.log(`[Gemini] Connecting to ${model}...`);
-        this.connect(model);
+        console.log(`[Gemini] Connecting to ${this.options.model}...`);
+        this.connect();
     }
 
-    private async connect(model: string) {
+    private async connect() {
         try {
-            const voice = this.options.voice;
+            const {
+                model,
+                voice,
+                recordCall,
+                objective,
+                context
+            } = this.options;
 
             // Include a notice for two-party states
-            const recordingNotice = this.options.recordCall 
+            const recordingNotice = recordCall
                 ? `
                     IMPORTANT: THIS CALL IS BEING RECORDED. You MUST
                     notify the other party at the very beginning of
@@ -76,8 +73,8 @@ export class GeminiBridge extends EventEmitter {
                 
                 ${recordingNotice}
                 
-                Your objective is: ${this.options.objective}
-                Additional context from the user: ${this.options.context || 'None'}
+                Your objective is: ${objective}
+                Additional context from the user: ${context || 'None'}
             `;
 
             // Establish and configure the Live session
@@ -164,7 +161,7 @@ export class GeminiBridge extends EventEmitter {
         try {
             // Handle setup response
             if (message.setupComplete) {
-                console.log('[Gemini] Setup complete');
+                console.log('[Gemini] Session started');
                 
                 // Propagate the connection success
                 this.isReady = true;
@@ -225,17 +222,15 @@ export class GeminiBridge extends EventEmitter {
         const { name, args, id } = functionCall;
         console.log(`[Gemini] Tool call: ${name}`, args);
         
+        // Propagate tool calls
         if (name === 'task_completed') {
-            // Propagate call completion
             this.emit('task_completed', args.summary);
-
-            if (id) this.sendToolResponse(id, name, { success: true });
         } else if (name === 'press_dtmf') {
-            // Trigger DTMF key presses over the Twilio websocket
             this.emit('press_dtmf', args.digit || args.key);
-
-            if (id) this.sendToolResponse(id, name, { success: true });
         }
+
+        if (id)
+            this.sendToolResponse(id, name, { success: true });
     }
 
     private sendToolResponse(id: string, name: string, response: any) {
