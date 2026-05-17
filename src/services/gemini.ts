@@ -211,6 +211,8 @@ export class GeminiBridge extends EventEmitter {
                 for (const call of calls) {
                     this.handleFunctionCall(call);
                 }
+            } else if (message.sessionResumptionUpdate) {
+                // No-op, session resumption is not needed
             } else {
                 console.log('[Gemini] Received other message:', JSON.stringify(message).substring(0, 500));
             }
@@ -250,7 +252,7 @@ export class GeminiBridge extends EventEmitter {
     }
 
     private handleClose(event: any) {
-        console.log(`[Gemini] Session closed.`, event);
+        console.log(`[Gemini] Session ended.`);
         this.emit('close');
 
         if (!this.isReady)
