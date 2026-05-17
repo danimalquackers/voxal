@@ -1,5 +1,9 @@
-import { McpServer } from "@modelcontextprotocol/server";
+import fs from "fs";
+import path from "path";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { config } from "../config.js";
+import { activeCalls } from "../calls/registry.js";
 
 // Define the shape of the call request
 export interface CallRequest {
@@ -33,21 +37,40 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
         async (args: any) => {
             console.log(`[MCP] Tool invoked: execute_phone_call to ${args.target_phone_number} (Record: ${args.record_call})`);
             try {
-                const summary = await executeCall({
+                // Place the call and wait for it to complete
+                const sid = await executeCall({
                     targetPhoneNumber: args.target_phone_number,
                     objective: args.objective,
                     context: args.context || 'None provided',
                     recordCall: args.record_call
                 });
 
+                // Retrieve the call summary
+                const callContext = activeCalls.get(sid);
+                const summary = callContext?.summary || "No summary available";
+
                 return {
-                    content: [{ type: "text", text: `Call Completed. Summary:\n${summary}` }]
+                    content: [
+                        {
+                            type: "text",
+                            text: `Call Completed. Summary:\n${summary}`
+                        },
+                        {
+                            type: "resource_link",
+                            uri: `transcript://${sid}`,
+                            name: sid,
+                            mimeType: "text/plain",
+                        }
+                    ]
                 };
             } catch (error) {
                 console.error("[MCP] execute_phone_call failed:", error);
                 return {
                     isError: true,
-                    content: [{ type: "text", text: `Failed to execute phone call: ${error instanceof Error ? error.message : String(error)}` }]
+                    content: [{
+                        type: "text",
+                        text: `Failed to execute phone call: ${error instanceof Error ? error.message : String(error)}`
+                    }]
                 };
             }
         }
@@ -77,6 +100,63 @@ export function createMcpServer(executeCall: ExecuteCallFn, getCallHistory: GetC
             }
         }
     );
+
+    server.registerResource(
+        "transcript",
+        new ResourceTemplate("transcript://{sid}", {
+            list: async () => {
+                // Retrieve the list of transcript files
+                const files = fs.globSync(path.join(config.recordingsDir, "call_*_transcript.txt"));
+
+                return {
+                    resources: files.map((file) => {
+                        // Extract the sid from the filename
+                        const filename = path.basename(file);
+                        const sid = filename.substring("call_".length, filename.length - "_transcript.txt".length);
+
+                        // Return a usable URI
+                        return {
+                            uri: `transcript://${sid}`,
+                            name: sid
+                        };
+                    })
+                }
+            },
+        }),
+        {
+            title: "Call Transcript",
+            description: "Retrieves the transcript of a specific call.",
+            mimeType: "text/plain",
+        },
+        async (uri, { sid }) => {
+            console.log(`[MCP] Retrieving transcript for call ${sid}`);
+            try {
+                // Try to read the transcript file if it exists
+                const transcriptFile = `${config.recordingsDir}/call_${sid}_transcript.txt`;
+                if (fs.existsSync(transcriptFile)) {
+                    const transcript = fs.readFileSync(transcriptFile, 'utf-8');
+
+                    return {
+                        contents: [{
+                            uri: uri.href,
+                            text: transcript,
+                        }]
+                    };
+                } else {
+                    return {
+                        isError: true,
+                        contents: [{ uri: uri.href, text: `Transcript not found for call ${sid}` }]
+                    };
+                }
+            } catch (error) {
+                console.error("[MCP] get_call_transcript failed:", error);
+                return {
+                    isError: true,
+                    contents: [{ uri: uri.href, text: `Failed to fetch call transcript: ${error instanceof Error ? error.message : String(error)}` }]
+                };
+            }
+        }
+    )
 
     server.registerPrompt(
         "agent_call",

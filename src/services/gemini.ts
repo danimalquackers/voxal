@@ -8,6 +8,12 @@ export interface GeminiBridgeOptions {
     objective: string;
     context?: string;
     recordCall?: boolean;
+    recordTranscript?: boolean;
+}
+
+export interface TranscriptEntry {
+    speaker: 'user' | 'model';
+    text: string;
 }
 
 const systemInstruction = `
@@ -77,56 +83,65 @@ export class GeminiBridge extends EventEmitter {
                 Additional context from the user: ${context || 'None'}
             `;
 
+            // Build the Live session config
+            const liveConfig: any = {
+                responseModalities: [ Modality.AUDIO ],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: voice
+                        }
+                    }
+                },
+                systemInstruction: {
+                    parts: [{
+                        text: prompt
+                    }]
+                },
+                tools: [{
+                    functionDeclarations: [
+                        {
+                            name: 'task_completed',
+                            description: 'Call this function when the task is complete to hang up the phone and provide a summary of the outcome.',
+                            parameters: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    summary: {
+                                        type: Type.STRING,
+                                        description: 'A brief summary of what was achieved.'
+                                    }
+                                },
+                                required: ['summary']
+                            }
+                        },
+                        {
+                            name: 'press_dtmf',
+                            description: 'Press a DTMF key (dial pad button). Use this to navigate phone menus or enter extensions.',
+                            parameters: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    digit: {
+                                        type: Type.STRING,
+                                        description: 'The digit to press (0-9, *, #)'
+                                    }
+                                },
+                                required: ['digit']
+                            }
+                        }
+                    ]
+                }]
+            };
+
+            // Enable native speech-to-text transcription if requested
+            if (this.options.recordTranscript) {
+                liveConfig.inputAudioTranscription = {};
+                liveConfig.outputAudioTranscription = {};
+            }
+
             // Establish and configure the Live session
             this.session = await this.ai.live.connect({
                 model: model,
-                config: {
-                    responseModalities: [ Modality.AUDIO ],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: voice
-                            }
-                        }
-                    },
-                    systemInstruction: {
-                        parts: [{
-                            text: prompt
-                        }]
-                    },
-                    tools: [{
-                        functionDeclarations: [
-                            {
-                                name: 'task_completed',
-                                description: 'Call this function when the task is complete to hang up the phone and provide a summary of the outcome.',
-                                parameters: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        summary: {
-                                            type: Type.STRING,
-                                            description: 'A brief summary of what was achieved.'
-                                        }
-                                    },
-                                    required: ['summary']
-                                }
-                            },
-                            {
-                                name: 'press_dtmf',
-                                description: 'Press a DTMF key (dial pad button). Use this to navigate phone menus or enter extensions.',
-                                parameters: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        digit: {
-                                            type: Type.STRING,
-                                            description: 'The digit to press (0-9, *, #)'
-                                        }
-                                    },
-                                    required: ['digit']
-                                }
-                            }
-                        ]
-                    }]
-                },
+                config: liveConfig,
                 callbacks: {
                     onopen: () => {
                         console.log('[Gemini] Connection established');
@@ -173,6 +188,16 @@ export class GeminiBridge extends EventEmitter {
             // Handle model updates
             if (message.serverContent) {
                 const content = message.serverContent;
+
+                // Emit transcription events (user speech-to-text)
+                if (content.inputTranscription?.text) {
+                    this.emit('transcript', { speaker: 'user', text: content.inputTranscription.text } as TranscriptEntry);
+                }
+
+                // Emit transcription events (model speech-to-text)
+                if (content.outputTranscription?.text) {
+                    this.emit('transcript', { speaker: 'model', text: content.outputTranscription.text } as TranscriptEntry);
+                }
                 
                 // No-op warning for interruptions
                 if (content.interrupted) {

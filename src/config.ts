@@ -73,6 +73,12 @@ const argv = yargs(hideBin(process.argv))
         default: process.env.TWILIO_PHONE_NUMBER,
         required: true,
     })
+    .option("transcription", {
+        alias: "t",
+        type: "boolean",
+        description: "Enable inline call transcription (saved to recordings)",
+        default: process.env.VOXAL_TRANSCRIPTION !== "false",
+    })
     .option("call-timeout", {
         type: "number",
         description: "Call timeout in seconds",
@@ -123,6 +129,9 @@ export const config = {
 
     // Call timeout in seconds
     callTimeout: argv["call-timeout"],
+
+    // Inline call transcription (enabled by default)
+    transcription: argv["transcription"],
 
     // Gemini API Key
     apiKey: argv["gemini-api-key"],

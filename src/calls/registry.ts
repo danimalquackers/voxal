@@ -3,14 +3,16 @@ import { GeminiBridge } from '../services/gemini.js';
 import { twilioClient } from '../services/shared.js';
 
 export interface CallContext {
-    resolve: (summary: string) => void;
+    resolve: (sid: string) => void;
     reject: (err: any) => void;
+    summary?: string;
     bridge?: GeminiBridge;
     objective: string;
     context: string;
     recordCall?: boolean;
     inRecording?: fs.WriteStream;
     outRecording?: fs.WriteStream;
+    transcriptFile?: fs.WriteStream;
 }
 
 export const activeCalls = new Map<string, CallContext>();
@@ -32,6 +34,7 @@ export async function cleanupCall(sid: string | null, error?: Error) {
             if (callContext.bridge) callContext.bridge.close();
             if (callContext.inRecording) callContext.inRecording.end();
             if (callContext.outRecording) callContext.outRecording.end();
+            if (callContext.transcriptFile) callContext.transcriptFile.end();
 
             if (error) {
                 callContext.reject(error);

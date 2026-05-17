@@ -1,7 +1,7 @@
 import fs, { WriteStream } from 'fs';
 import path from 'path';
 import { config } from '../config.js';
-import { GeminiBridge } from '../services/gemini.js';
+import { GeminiBridge, TranscriptEntry } from '../services/gemini.js';
 import { decodeMulawToPcm16, encodePcm16ToMulaw, generateDtmfPcm16 } from '../utils/audio.js';
 import { activeCalls, cleanupCall } from '../calls/registry.js';
 
@@ -20,6 +20,8 @@ export function handleTwilioWebSocket(ws: any, req: any) {
     let expectedPlaybackFinishedTime = 0;
     let totalBytesReceived = 0;
     let totalBytesSent = 0;
+    let callStartTime = 0;
+    let lastTranscriptSpeaker: 'user' | 'model' | null = null;
 
     const recordOutgoingAudio = (pcm16Buffer: Buffer, outRecording?: WriteStream) => {
         if (outRecording) {
@@ -66,7 +68,8 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                         voice: config.voice,
                         objective: callContext.objective,
                         context: callContext.context,
-                        recordCall: callContext.recordCall
+                        recordCall: callContext.recordCall,
+                        recordTranscript: config.transcription
                     });
                     
                     // Store reference for later cleanup
@@ -82,8 +85,24 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                     }
 
                     // Start recordings
-                    callContext.inRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_received.raw`));
-                    callContext.outRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_sent.raw`));
+                    if (callContext.recordCall) {
+                        callContext.inRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_received.raw`));
+                        callContext.outRecording = fs.createWriteStream(path.join(recordingsDir, `call_${callSid}_sent.raw`));
+                    }
+
+                    // Start transcript file if transcription is enabled
+                    if (config.transcription) {
+                        const transcriptPath = path.join(recordingsDir, `call_${callSid}_transcript.txt`);
+                        callContext.transcriptFile = fs.createWriteStream(transcriptPath);
+                        callStartTime = Date.now();
+
+                        // Write metadata header
+                        const startDate = new Date().toLocaleString();
+                        callContext.transcriptFile.write(`Call Transcript\n`);
+                        callContext.transcriptFile.write(`Date: ${startDate}\n`);
+                        callContext.transcriptFile.write(`Objective: ${callContext.objective}\n`);
+                        callContext.transcriptFile.write(`${'─'.repeat(30)}\n\n`);
+                    }
 
                     bridge.on('audio', (pcm16Buffer: Buffer) => {
                         if (isMuted) return;
@@ -117,6 +136,29 @@ export function handleTwilioWebSocket(ws: any, req: any) {
 
                         // Send DTMF tone over media stream
                         sendOutgoingAudio(dtmfPcm16);
+                    });
+
+                    bridge.on('transcript', (entry: TranscriptEntry) => {
+                        if (!callContext.transcriptFile || !entry.text.trim()) return;
+
+                        // Calculate timestamps for every transcript entry
+                        const elapsedSec = Math.floor((Date.now() - callStartTime) / 1000);
+                        const min = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
+                        const sec = (elapsedSec % 60).toString().padStart(2, '0');
+                        const timestamp = `[${min}:${sec}]`;
+                        const label = entry.speaker === 'user' ? 'User' : 'Agent';
+
+                        if (lastTranscriptSpeaker !== entry.speaker) {
+                            // New speaker
+                            if (lastTranscriptSpeaker !== null)
+                                callContext.transcriptFile.write('\n');
+
+                            callContext.transcriptFile.write(`${timestamp} ${label}: ${entry.text.trim()}`);
+                            lastTranscriptSpeaker = entry.speaker;
+                        } else {
+                            // Same speaker, append
+                            callContext.transcriptFile.write(` ${entry.text.trim()}`);
+                        }
                     });
 
                     bridge.on('interrupted', () => {
@@ -157,7 +199,10 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                                 if (callSid) {
                                     console.log(`[Twilio] Call complete. Hanging up ${callSid}`);
 
-                                    callContext.resolve(summary);
+                                    // Cache the summary in the call context
+                                    callContext.summary = summary;
+
+                                    callContext.resolve(callSid);
                                     cleanupCall(callSid);
                                 }
                             }
