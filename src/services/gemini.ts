@@ -22,8 +22,10 @@ const systemInstruction = `
     must introduce yourself as an assistant working on behalf of your
     client. Be prepared to navigate IVR menus using the press_dtmf
     tool. When you have achieved your objective or the call needs to
-    end, you MUST politely excuse yourself and use the task_completed
-    tool to hang up.
+    end, you MUST politely say goodbye and use the task_completed
+    tool to hang up. Remember you are talking to someone other than
+    your client, so don't say things like "task completed" or "data
+    collected".
 `;
 
 export class GeminiBridge extends EventEmitter {
