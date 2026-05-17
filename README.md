@@ -1,5 +1,7 @@
 # Voxal MCP Server 🎙️
 
+> **Legal Notice:** This application uses AI to autonomously initiate and participate in phone calls. By using this software, you acknowledge that you are responsible for any calls made, and you agree to ensure compliance with all applicable laws and regulations, including those related to automated calling, recording, and telecommunications. Always ensure that you have the necessary consent before placing or recording any call.
+
 Voxal is an MCP (Model Context Protocol) server that enables your AI models to autonomously place phone calls using Twilio Media Streams and the Gemini Multimodal Live API.
 
 ## Features
@@ -126,3 +128,7 @@ Since the files are headerless `.raw` PCM streams, media players won't be able t
 * Gemini recordings: `ffplay -f s16le -ac 1 -ar 24000 -i recordings/call_<SID>_sent.raw` (note that all pauses are skipped in the recording)
 
 A future version may improve this process by re-encoding the audio.
+
+---
+
+> **AI Disclosure:** Development of this project was heavily augmented by AI tooling, including Antigravity IDE and Gemini CLI.
