@@ -10,24 +10,30 @@
   "scripts": {
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
-    "dev": "tsc --watch & node --env-file=.env --watch dist/index.js"
+    "dev": "tsc-watch -b tsconfig.json --onSuccess \"node --env-file=.env dist/index.js\""
   },
   "dependencies": {
-    "@google/genai": "latest",
-    "@modelcontextprotocol/sdk": "^1.5.0",
+    "@cfworker/json-schema": "^4.1.1",
+    "@google/genai": "^2.3.0",
+    "@modelcontextprotocol/express": "^2.0.0-alpha.2",
+    "@modelcontextprotocol/node": "^2.0.0-alpha.2",
+    "@modelcontextprotocol/server": "^2.0.0-alpha.2",
     "@ngrok/ngrok": "^1.7.0",
     "@types/express-ws": "^3.0.6",
+    "@types/yargs": "^17.0.35",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
+    "express": "^5.2.1",
     "express-ws": "^5.0.2",
     "twilio": "^5.0.0",
     "wavefile": "^11.0.0",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.10",
+    "tsc-watch": "^7.2.0",
     "typescript": "^5.4.5"
   }
 }

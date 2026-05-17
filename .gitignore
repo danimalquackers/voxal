@@ -4,7 +4,11 @@
 # call recordings
 recordings/
 
+# user context
+user_context.txt
+
 # environment temporary files
 .direnv/
 dist/
 node_modules/
+tsconfig.tsbuildinfo
