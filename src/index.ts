@@ -5,7 +5,7 @@ import ngrok from '@ngrok/ngrok';
 import { hostHeaderValidation } from "@modelcontextprotocol/express"
 import { config } from './config.js';
 import { serverState } from './services/shared.js';
-import { handleTwilioWebSocket } from './routes/media.js';
+import { handleTwilioWebSocket } from './routes/stream.js';
 import { handleMcpRequest, initStdioMcp } from './routes/mcp.js';
 
 async function startServer() {

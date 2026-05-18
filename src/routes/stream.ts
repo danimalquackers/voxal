@@ -64,13 +64,9 @@ export function handleTwilioWebSocket(ws: any, req: any) {
                 const callContext = activeCalls.get(callSid!);
                 if (callContext) {
                     bridge = new GeminiBridge({
-                        apiKey: config.apiKey,
-                        model: config.model,
-                        voice: config.voice,
                         objective: callContext.objective,
                         context: callContext.context,
                         recordCall: callContext.recordCall,
-                        recordTranscript: config.transcription
                     });
                     
                     // Store reference for later cleanup

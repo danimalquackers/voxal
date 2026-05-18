@@ -1,14 +1,11 @@
 import { GoogleGenAI, Modality, Session, Type } from '@google/genai';
 import { EventEmitter } from 'events';
+import { config } from '../config.js';
 
 export interface GeminiBridgeOptions {
-    apiKey: string;
-    model: string;
-    voice: string;
     objective: string;
     context?: string;
     recordCall?: boolean;
-    recordTranscript?: boolean;
 }
 
 export interface TranscriptEntry {
@@ -44,22 +41,20 @@ export class GeminiBridge extends EventEmitter {
         this.options = options;
 
         // Connect to Gemini API
-        this.ai = new GoogleGenAI({ apiKey: this.options.apiKey });
+        this.ai = new GoogleGenAI({ apiKey: config.apiKey });
         
         this.readyPromise = new Promise((resolve, reject) => {
             this.resolveReady = resolve;
             this.rejectReady = reject;
         });
 
-        console.error(`[Gemini] Connecting to ${this.options.model}...`);
+        console.error(`[Gemini] Connecting to ${config.model}...`);
         this.connect();
     }
 
     private async connect() {
         try {
             const {
-                model,
-                voice,
                 recordCall,
                 objective,
                 context
@@ -80,6 +75,8 @@ export class GeminiBridge extends EventEmitter {
                 ${systemInstruction}
                 
                 ${recordingNotice}
+
+                ${config.systemPrompt || ""}
                 
                 Your objective is: ${objective}
                 Additional context from the user: ${context || 'None'}
@@ -91,7 +88,7 @@ export class GeminiBridge extends EventEmitter {
                 speechConfig: {
                     voiceConfig: {
                         prebuiltVoiceConfig: {
-                            voiceName: voice
+                            voiceName: config.voice
                         }
                     }
                 },
@@ -135,14 +132,14 @@ export class GeminiBridge extends EventEmitter {
             };
 
             // Enable native speech-to-text transcription if requested
-            if (this.options.recordTranscript) {
+            if (config.transcription) {
                 liveConfig.inputAudioTranscription = {};
                 liveConfig.outputAudioTranscription = {};
             }
 
             // Establish and configure the Live session
             this.session = await this.ai.live.connect({
-                model: model,
+                model: config.model,
                 config: liveConfig,
                 callbacks: {
                     onopen: () => {

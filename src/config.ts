@@ -20,6 +20,12 @@ const argv = yargs(hideBin(process.argv))
         description: "Gemini voice to use",
         default: process.env.VOXAL_GEMINI_VOICE || "Fenrir",
     })
+    .option("system-prompt", {
+        alias: "s",
+        type: "string",
+        description: "Additional system instructions to modify the behavior of the model",
+        default: process.env.VOXAL_PROMPT,
+    })
     .option("context-file", {
         alias: "c",
         type: "string",
@@ -103,6 +109,7 @@ export const config = {
     // Gemini settings
     model: argv.model,
     voice: argv.voice,
+    systemPrompt: argv["system-prompt"],
 
     // Path to the persistent user context file
     contextFile: argv["context-file"],
