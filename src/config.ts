@@ -42,41 +42,41 @@ const argv = yargs(hideBin(process.argv))
         alias: "p",
         type: "number",
         description: "Server listening port",
-        default: Number(process.env.PORT) || 3000,
+        default: Number(process.env.VOXAL_PORT || process.env.PORT) || 3000,
     })
     .option("host", {
         alias: "l",
         type: "string",
         description: "Server listening host interface",
-        default: process.env.HOST || "127.0.0.1",
+        default: process.env.VOXAL_HOST || process.env.HOST || "127.0.0.1",
     })
     .option("ngrok-authtoken", {
         type: "string",
         description: "Ngrok Authtoken",
-        default: process.env.NGROK_AUTHTOKEN,
+        default: process.env.VOXAL_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN,
         required: true,
     })
     .option("ngrok-domain", {
         type: "string",
         description: "Ngrok Custom Domain (optional)",
-        default: process.env.NGROK_DOMAIN,
+        default: process.env.VOXAL_NGROK_DOMAIN || process.env.NGROK_DOMAIN,
     })
     .option("twilio-account-sid", {
         type: "string",
         description: "Twilio Account SID",
-        default: process.env.TWILIO_ACCOUNT_SID,
+        default: process.env.VOXAL_TWILIO_ACCOUNT_SID || process.env.TWILIO_ACCOUNT_SID,
         required: true,
     })
     .option("twilio-auth-token", {
         type: "string",
         description: "Twilio Auth Token",
-        default: process.env.TWILIO_AUTH_TOKEN,
+        default: process.env.VOXAL_TWILIO_AUTH_TOKEN || process.env.TWILIO_AUTH_TOKEN,
         required: true,
     })
     .option("twilio-phone-number", {
         type: "string",
         description: "Twilio Phone Number to call from",
-        default: process.env.TWILIO_PHONE_NUMBER,
+        default: process.env.VOXAL_TWILIO_PHONE_NUMBER || process.env.TWILIO_PHONE_NUMBER,
         required: true,
     })
     .option("transcription", {
@@ -93,7 +93,7 @@ const argv = yargs(hideBin(process.argv))
     .option("gemini-api-key", {
         type: "string",
         description: "Gemini API Key",
-        default: process.env.GEMINI_API_KEY,
+        default: process.env.VOXAL_GEMINI_API_KEY || process.env.GEMINI_API_KEY,
         required: true,
     })
     .help()

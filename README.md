@@ -23,7 +23,7 @@ Voxal is an MCP (Model Context Protocol) server that enables your AI models to a
 
 4. Clone this repository.
 
-5. Create a `.env` file in the root directory, and fill in the required environment variables:
+5. Create a `.env` file in the root directory, and fill in the required environment variables (all environment variables also support the `VOXAL_` prefix):
 
 ```env
 # Required: Twilio account information
