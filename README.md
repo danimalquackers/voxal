@@ -15,13 +15,15 @@ Voxal is an MCP (Model Context Protocol) server that enables your AI models to a
 
 ## Setup & Configuration
 
-1. Create a Twilio account with a paid subscription and purchase a phone number.
+1. Create a [Twilio](https://www.twilio.com/try-twilio) account [**with a paid subscription**](https://help.twilio.com/articles/223183208-Upgrading-to-a-paid-Twilio-Account) and [purchase a phone number](https://help.twilio.com/articles/223135247-How-to-Search-for-and-Buy-a-Twilio-Phone-Number-from-Console).
 
-2. Create a free Ngrok account.
+2. Create a free [Ngrok](https://dashboard.ngrok.com/signup) account.
 
-3. Clone this repository.
+3. Create a free [Gemini API key](https://aistudio.google.com/app/apikey)
 
-4. Create a `.env` file in the root directory, and fill in the required environment variables:
+4. Clone this repository.
+
+5. Create a `.env` file in the root directory, and fill in the required environment variables:
 
 ```env
 # Required: Twilio account information
@@ -53,15 +55,16 @@ NGROK_AUTHTOKEN=your_ngrok_authtoken
 # Optional: Feature flags
 # VOXAL_TRANSCRIPTION=true          # Set to "false" to disable call transcripts
 # VOXAL_CALL_TIMEOUT=600            # Call timeout in seconds (default: 10 minutes)
+# VOXAL_AGENT_PROMPT=...            # Additional agent instructions (default: "")
 ```
 
-5. Install dependencies and build:
+6. Install dependencies and build:
 ```bash
 npm install
 npm run build
 ```
 
-6. Run the server:
+7. Run the server:
 ```bash
 npm start
 ```
