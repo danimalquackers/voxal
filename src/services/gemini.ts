@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality, Session, Type } from '@google/genai';
 import { EventEmitter } from 'events';
+import dedent from 'dedent-js';
 import { config } from '../config.js';
 
 export interface GeminiBridgeOptions {
@@ -13,7 +14,7 @@ export interface TranscriptEntry {
     text: string;
 }
 
-const systemInstruction = `
+const systemInstruction = dedent`
     You are an autonomous AI voice agent making a phone call. You must
     speak clearly, concisely, and act human-like over the phone. You
     must introduce yourself as an assistant working on behalf of your
@@ -62,7 +63,7 @@ export class GeminiBridge extends EventEmitter {
 
             // Include a notice for two-party states
             const recordingNotice = recordCall
-                ? `
+                ? dedent`
                     IMPORTANT: THIS CALL IS BEING RECORDED. You MUST
                     notify the other party at the very beginning of
                     the conversation that 'This call is being recorded'
@@ -71,7 +72,7 @@ export class GeminiBridge extends EventEmitter {
                 : "";
 
             // Assemble the system prompt based on the options provided
-            const prompt = `
+            const prompt = dedent`
                 ${systemInstruction}
                 
                 ${recordingNotice}
@@ -184,7 +185,7 @@ export class GeminiBridge extends EventEmitter {
             turns: [{
                 role: 'user',
                 parts: [{
-                    text: `
+                    text: dedent`
                         The other party has disconnected from the call.
                         Do not generate any more audio. Process all of
                         the remaining user input and call 'task_completed'
